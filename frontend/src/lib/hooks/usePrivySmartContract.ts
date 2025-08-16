@@ -62,44 +62,19 @@ export function usePrivySmartContract() {
     if (isInsufficientFunds && wallet.walletClientType === 'privy') {
       console.log('Insufficient funds detected, triggering funding flow for:', wallet.address)
       
-      // Check if we're on local development chain
-      const provider = await wallet.getEthereumProvider()
-      const chainId = await provider.request({ method: 'eth_chainId' })
-      const isLocalChain = parseInt(chainId, 16) === 31337
-      
-      if (isLocalChain) {
-        // For local development, auto-fund the account
-        console.log('Local development detected, funding account with Anvil...')
-        try {
-          const response = await fetch('http://localhost:8545', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              jsonrpc: '2.0',
-              method: 'anvil_setBalance',
-              params: [wallet.address, '0x21E19E0C9BAB2400000'], // 10 ETH in wei
-              id: 1
-            })
-          })
-          const result = await response.json()
-          if (!result.error) {
-            console.log('✅ Auto-funded local development account with 10 ETH')
-            // Show success message
-            alert('✅ Your wallet has been funded with 10 ETH for local development. Please try your transaction again.')
-          } else {
-            throw new Error('Anvil funding failed: ' + result.error?.message)
-          }
-        } catch (localFundingError) {
-          console.error('Local funding failed:', localFundingError)
-          alert('❌ Could not auto-fund local development account. Make sure Anvil is running on localhost:8545')
-        }
-      } else {
-        // For production networks, use Privy funding
+      try {
+        // Fund on Base (cheaper than mainnet) - user will need to bridge to local if developing
+        await fundWallet(wallet.address, {
+          chain: { id: 8453, name: 'base' }, // Fund on Base network
+          amount: 0.01 // Small amount of ETH
+        })
+      } catch (fundingError) {
+        console.error('Funding flow failed:', fundingError)
+        // Fallback: try default funding
         try {
           await fundWallet(wallet.address)
-        } catch (fundingError) {
-          console.error('Funding flow failed:', fundingError)
-          alert('Funding failed. Please try again or contact support.')
+        } catch (fallbackError) {
+          console.error('All funding attempts failed:', fallbackError)
         }
       }
     }
