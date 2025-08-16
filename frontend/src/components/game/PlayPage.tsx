@@ -184,7 +184,17 @@ export const PlayPage: React.FC<PlayPageProps> = ({ onClose, onGameStart }) => {
       }
     } catch (error) {
       console.error('Error creating game:', error);
-      alert('Failed to create game. Please try again.');
+      
+      const errorMessage = error?.message || error?.toString() || ''
+      const isInsufficientFunds = errorMessage.toLowerCase().includes('insufficient') || 
+                                 errorMessage.toLowerCase().includes('funds')
+      
+      if (isInsufficientFunds) {
+        // Don't show alert for funding issues - the funding flow will handle it
+        console.log('Game creation failed due to insufficient funds - funding flow should handle this')
+      } else {
+        alert('Failed to create game. Please try again.');
+      }
     }
   };
 

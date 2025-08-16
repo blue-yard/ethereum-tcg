@@ -124,21 +124,11 @@ export function usePrivySmartContract() {
         const currentChainId = parseInt(chainId, 16)
         
         if (currentChainId === 31337) {
-          // For local development, explain the situation
-          const shouldFund = confirm(
-            'You need ETH on the local development chain (31337) to play this game.\n\n' +
-            'Privy funding works on mainnet/testnet but you\'re on local development.\n\n' +
-            'Options:\n' +
-            '• Click OK to fund on Base network (you\'ll need to bridge)\n' +
-            '• Click Cancel and ask developer for test ETH\n\n' +
-            'Proceed with funding on Base?'
-          )
-          
-          if (shouldFund) {
-            await promptFundingIfNeeded(wallet, new Error('Insufficient funds for gas'))
-            alert('✅ Funded on Base network. For local development, you may need the developer to provide test ETH directly on localhost:31337')
-          }
+          // For local development, show a simpler message and proceed with funding
+          console.log('Local development detected - proceeding with funding flow')
+          await promptFundingIfNeeded(wallet, new Error('Insufficient funds for gas'))
         } else {
+          // For production chains, proceed directly with funding
           await promptFundingIfNeeded(wallet, new Error('Insufficient funds for gas'))
         }
         
