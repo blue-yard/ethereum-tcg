@@ -23,3 +23,7 @@
 **Winning and Losing**
 * The game ends when either one player accumulates 10 ETH in cold storage or one player's balance across all wallets + cold storage reaches 0.
 * When the game ends, the winner receives the full stake (combination of both opponents) minus a protocol fee which is deposited into the game protocol's treasury.
+
+
+**Open Questions**
+* what happens to the stake if one or both players fail to continue the game? We need a way to unlock the staked ETH nd return it (minus a fee) to the players.
