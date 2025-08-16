@@ -1,4 +1,4 @@
-import { usePrivy } from '@privy-io/react-auth'
+import { usePrivy, useLogin, useFundWallet } from '@privy-io/react-auth'
 import type { ReactNode } from 'react'
 import { LoadingScreen } from '@/components/ui/LoadingSpinner'
 import { FadeInUp, ScaleIn } from '@/components/ui/PageTransition'
@@ -8,7 +8,17 @@ interface AuthGateProps {
 }
 
 export function AuthGate({ children }: AuthGateProps) {
-  const { ready, authenticated, login } = usePrivy()
+  const { ready, authenticated } = usePrivy()
+  const { fundWallet } = useFundWallet()
+  
+  const { login } = useLogin({
+    onComplete: ({ user, isNewUser }) => {
+      // Automatically prompt new users to fund their embedded wallet for gas fees
+      if (isNewUser && user.wallet?.walletClientType === 'privy') {
+        fundWallet(user.wallet.address)
+      }
+    }
+  })
 
   if (!ready) {
     return <LoadingScreen message="Initializing Web3..." />
