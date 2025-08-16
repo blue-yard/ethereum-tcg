@@ -318,9 +318,10 @@ export const useGameEngine = () => {
       })
       
       console.log('Next game ID from contract:', nextGameId)
+      console.log('nextGameId type:', typeof nextGameId, 'value:', nextGameId)
       
       if (!nextGameId || Number(nextGameId) === 0) {
-        console.log('No games exist yet')
+        console.log('No games exist yet - nextGameId is', nextGameId)
         return []
       }
       
@@ -345,6 +346,7 @@ export const useGameEngine = () => {
           
           // Only show games that are waiting for players (not started and no player2)
           const hasPlayer2 = gameData.player2 && gameData.player2 !== '0x0000000000000000000000000000000000000000'
+          console.log(`Game ${i} - isStarted: ${gameData.isStarted}, hasPlayer2: ${hasPlayer2}, player2: ${gameData.player2}`)
           if (gameData && !gameData.isStarted && !hasPlayer2) {
             console.log(`Game ${i} is available for joining`)
             games.push({

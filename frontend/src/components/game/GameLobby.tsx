@@ -26,20 +26,15 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
   const privyWallet = wallets.find(w => w.walletClientType === 'privy');
   const address = privyWallet?.address;
   
-  // Debug logging
-  console.log('===== GAME LOBBY DEBUG =====');
-  console.log('Game ID:', gameId);
-  console.log('All wallets:', wallets);
-  console.log('Privy wallet:', privyWallet);
-  console.log('Current wallet address (Privy):', address);
+  // Debug logging for player identification
+  console.log('===== GAME LOBBY PLAYER DEBUG =====');
+  console.log('Current wallet address:', address);
+  console.log('Game player1:', gameState?.player1);
+  console.log('Game player2:', gameState?.player2); 
   console.log('Is Host prop:', isHost);
-  console.log('Game State:', gameState);
-  console.log('Player 1 (Host):', gameState?.player1 || gameState?.creator);
-  console.log('Player 2:', gameState?.player2);
-  console.log('Address comparison P1:', address?.toLowerCase(), '===', (gameState?.player1 || gameState?.creator)?.toLowerCase());
-  console.log('Address match P1?:', address?.toLowerCase() === (gameState?.player1 || gameState?.creator)?.toLowerCase());
-  console.log('Address match P2?:', address?.toLowerCase() === gameState?.player2?.toLowerCase());
-  console.log('============================');
+  console.log('Player1 match:', address?.toLowerCase() === gameState?.player1?.toLowerCase());
+  console.log('Player2 match:', address?.toLowerCase() === gameState?.player2?.toLowerCase());
+  console.log('=====================================');
 
   const getDeckName = (deckId: number) => {
     const deck = availableDecks.find(d => d.id === deckId);

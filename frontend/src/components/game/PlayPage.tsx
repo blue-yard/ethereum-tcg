@@ -23,9 +23,12 @@ interface GameInfo {
 export const PlayPage: React.FC<PlayPageProps> = ({ onClose, onGameStart }) => {
   const { user } = usePrivy();
   const { wallets } = useWallets();
-  // Get the Privy embedded wallet address
+  // Always use the Privy embedded wallet address for consistency
   const privyWallet = wallets.find(w => w.walletClientType === 'privy');
   const address = privyWallet?.address;
+  
+  console.log('PlayPage - Available wallets:', wallets.map(w => ({ address: w.address, type: w.walletClientType })));
+  console.log('PlayPage - Selected Privy wallet address:', address);
   const [searchParams, setSearchParams] = useSearchParams();
   const { 
     createGame, 
@@ -132,16 +135,20 @@ export const PlayPage: React.FC<PlayPageProps> = ({ onClose, onGameStart }) => {
       const interval = setInterval(async () => {
         const state = await getGameState(currentGameId);
         console.log('Polling - Updated game state:', state);
+        console.log('Polling - Checking isStarted:', state?.isStarted, 'Type:', typeof state?.isStarted);
         setGameState(state);
         
         // Check if game has actually started (not just ready)
         if (state?.isStarted === true) {
+          console.log('🎮 GAME STARTED DETECTED! Transitioning to game view...');
           clearInterval(interval);
           // Clear URL params and start the game
           setSearchParams(new URLSearchParams());
           onGameStart(currentGameId);
+        } else {
+          console.log('Game not started yet, continuing to poll...');
         }
-      }, 2000);
+      }, 1000); // Very fast polling (1 second) to catch the transition
       
       // Initial fetch
       getGameState(currentGameId).then(setGameState);
@@ -218,10 +225,18 @@ export const PlayPage: React.FC<PlayPageProps> = ({ onClose, onGameStart }) => {
   };
 
   const handleStartGame = async () => {
-    if (currentGameId === null) return;
+    console.log('=== START GAME BUTTON CLICKED ===');
+    console.log('Current Game ID:', currentGameId);
+    
+    if (currentGameId === null) {
+      console.log('No current game ID, returning early');
+      return;
+    }
     
     try {
+      console.log('Calling startGame function for gameId:', currentGameId);
       await startGame(currentGameId);
+      console.log('startGame function completed successfully');
       // The polling interval will detect when game starts and call onGameStart
     } catch (error) {
       console.error('Error starting game:', error);

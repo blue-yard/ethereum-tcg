@@ -327,45 +327,54 @@ export function Game() {
     }
   }
 
+  // Track if we've already processed the URL params to prevent infinite loops
+  const [processedUrlParams, setProcessedUrlParams] = useState<string>('')
+  
   // Check URL parameters on mount to restore game state
   useEffect(() => {
     const viewParam = searchParams.get('view')
     const gameIdParam = searchParams.get('gameId')
+    const currentParams = `${viewParam || ''}-${gameIdParam || ''}`
+    
+    // Prevent infinite loop by checking if we've already processed these params
+    if (currentParams === processedUrlParams) {
+      return
+    }
+    
+    setProcessedUrlParams(currentParams)
     
     // If there's a gameId in the URL, we need to load the game from the contract
     if (gameIdParam) {
       const gameId = parseInt(gameIdParam)
-      if (!isNaN(gameId)) {
+      if (!isNaN(gameId) && getDetailedGameState) {
         console.log('Found gameId in URL, loading game:', gameId)
         setContractGameId(gameId)
         
         // Load the game state from the blockchain
-        if (getDetailedGameState) {
-          getDetailedGameState(gameId).then(gameStateView => {
-            if (gameStateView) {
-              console.log('Loaded game state from contract:', gameStateView)
-              
-              // Check if the game has started
-              if (gameStateView.isStarted) {
-                // Game has started, load it directly into the game view
-                handleOnchainGameStart(gameId)
-              } else {
-                // Game hasn't started yet, show the PlayPage/lobby
-                setShowPlayPage(true)
-              }
+        getDetailedGameState(gameId).then(gameStateView => {
+          if (gameStateView) {
+            console.log('Loaded game state from contract:', gameStateView)
+            
+            // Check if the game has started
+            if (gameStateView.isStarted) {
+              // Game has started, load it directly into the game view
+              handleOnchainGameStart(gameId)
+            } else {
+              // Game hasn't started yet, show the PlayPage/lobby
+              setShowPlayPage(true)
             }
-          }).catch(error => {
-            console.error('Failed to load game from URL parameter:', error)
-            // Still show the PlayPage so user can see the error or try again
-            setShowPlayPage(true)
-          })
-        }
+          }
+        }).catch(error => {
+          console.error('Failed to load game from URL parameter:', error)
+          // Still show the PlayPage so user can see the error or try again
+          setShowPlayPage(true)
+        })
       }
     } else if (viewParam) {
       // Just a view parameter without gameId
       setShowPlayPage(true)
     }
-  }, [searchParams, getDetailedGameState, startGame, wallets, setContractGameId, updateGameFromContract])
+  }, [searchParams, getDetailedGameState, processedUrlParams, setContractGameId])
 
   return (
     <div className="min-h-screen bg-eth-dark flex flex-col">

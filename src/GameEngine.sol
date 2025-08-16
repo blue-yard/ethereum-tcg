@@ -94,6 +94,7 @@ contract GameEngine {
     error GameNotFound();
     error GameAlreadyStarted();
     error GameFull();
+    error NotEnoughPlayers();
     error NotInGame();
     error AlreadyInGame();
     error InvalidDeck();
@@ -170,7 +171,7 @@ contract GameEngine {
         
         if (game.player1 == address(0)) revert GameNotFound();
         if (game.isStarted) revert GameAlreadyStarted();
-        if (game.player2 == address(0)) revert GameFull();
+        if (game.player2 == address(0)) revert NotEnoughPlayers();
         if (game.player1 != msg.sender && game.player2 != msg.sender) revert NotInGame();
         
         game.isStarted = true;
