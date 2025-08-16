@@ -62,9 +62,20 @@ export function usePrivySmartContract() {
     if (isInsufficientFunds && wallet.walletClientType === 'privy') {
       console.log('Insufficient funds detected, triggering funding flow for:', wallet.address)
       try {
-        await fundWallet(wallet.address)
+        // For local development, suggest funding to mainnet/base and then bridging
+        // Or use a small amount on mainnet for testing
+        await fundWallet(wallet.address, {
+          chain: { id: 1, name: 'ethereum' }, // Fund on mainnet then bridge if needed
+          funding_amount_usd: 10 // Small amount for testing
+        })
       } catch (fundingError) {
         console.error('Funding flow failed:', fundingError)
+        // Fallback: try without specific chain config
+        try {
+          await fundWallet(wallet.address)
+        } catch (fallbackError) {
+          console.error('Fallback funding also failed:', fallbackError)
+        }
       }
     }
   }

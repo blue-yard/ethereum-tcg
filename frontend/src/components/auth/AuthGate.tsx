@@ -28,14 +28,24 @@ export function AuthGate({ children }: AuthGateProps) {
     }
   })
   
-  // Manual test function
+  // Manual test function with better configuration
   const testFunding = async () => {
     if (user?.wallet?.address) {
       console.log('Testing manual funding for:', user.wallet.address)
       try {
-        await fundWallet(user.wallet.address)
+        // Try funding on Base (more dev-friendly)
+        await fundWallet(user.wallet.address, {
+          chain: { id: 8453, name: 'base' },
+          funding_amount_usd: 5 // Small amount for testing
+        })
       } catch (error) {
-        console.error('Manual funding test failed:', error)
+        console.error('Base funding failed, trying default:', error)
+        try {
+          // Fallback to default funding
+          await fundWallet(user.wallet.address)
+        } catch (fallbackError) {
+          console.error('All funding attempts failed:', fallbackError)
+        }
       }
     }
   }
@@ -80,16 +90,49 @@ export function AuthGate({ children }: AuthGateProps) {
     )
   }
 
+  // Dev helper - fund local account with Anvil
+  const fundLocalAccount = async () => {
+    if (user?.wallet?.address) {
+      console.log('Funding local account with Anvil...')
+      try {
+        // Use Anvil to fund the account with ETH on local chain
+        const response = await fetch('http://localhost:8545', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            method: 'anvil_setBalance',
+            params: [user.wallet.address, '0x21E19E0C9BAB2400000'], // 10 ETH in wei
+            id: 1
+          })
+        })
+        const result = await response.json()
+        console.log('Local funding result:', result)
+        if (!result.error) {
+          alert('✅ Funded with 10 ETH on local chain! Try your transaction again.')
+        }
+      } catch (error) {
+        console.error('Local funding failed:', error)
+      }
+    }
+  }
+
   if (authenticated && user?.wallet?.walletClientType === 'privy') {
     return (
       <>
         {children}
-        <div className="fixed bottom-4 right-4 z-50">
+        <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
           <button
             onClick={testFunding}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
           >
-            Test Fund Wallet
+            Fund Wallet (Mainnet)
+          </button>
+          <button
+            onClick={fundLocalAccount}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+          >
+            Fund Local Dev (10 ETH)
           </button>
         </div>
       </>

@@ -11,6 +11,32 @@ export const localChain = {
   },
 } as const
 
+// Ethereum mainnet configuration (needed for funding)
+export const mainnet = {
+  id: 1,
+  name: 'Ethereum',
+  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+  rpcUrls: {
+    default: { http: ['https://ethereum.publicnode.com'] },
+  },
+  blockExplorers: {
+    default: { name: 'Etherscan', url: 'https://etherscan.io' },
+  },
+} as const
+
+// Base mainnet (alternative for funding)
+export const base = {
+  id: 8453,
+  name: 'Base',
+  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+  rpcUrls: {
+    default: { http: ['https://mainnet.base.org'] },
+  },
+  blockExplorers: {
+    default: { name: 'BaseScan', url: 'https://basescan.org' },
+  },
+} as const
+
 // Privy configuration
 export const privyConfig = {
   appId: import.meta.env.VITE_PRIVY_APP_ID || 'local-dev-app-id',
@@ -32,7 +58,7 @@ export const privyConfig = {
       coinbaseWallet: true,
       walletConnect: true,
     },
-    supportedChains: [localChain],
+    supportedChains: [localChain, mainnet, base],
     defaultChain: localChain,
     // Additional wallet options
     mfa: {
