@@ -1,4 +1,4 @@
-import { usePrivy, useWallets } from '@privy-io/react-auth'
+import { usePrivy, useWallets, useFundWallet } from '@privy-io/react-auth'
 import { useState } from 'react'
 import { encodeFunctionData, type Abi } from 'viem'
 import type { WalletWithMetadata } from '@privy-io/react-auth'
@@ -13,6 +13,7 @@ interface WriteContractArgs {
 export function usePrivySmartContract() {
   const { user } = usePrivy()
   const { wallets } = useWallets()
+  const { fundWallet } = useFundWallet()
   const [isPending, setIsPending] = useState(false)
 
   const getPrivyWallet = async (): Promise<WalletWithMetadata | null> => {
@@ -32,6 +33,40 @@ export function usePrivySmartContract() {
     }
     
     return embeddedWallet
+  }
+
+  const checkBalance = async (wallet: WalletWithMetadata, requiredAmount: bigint): Promise<boolean> => {
+    try {
+      const provider = await wallet.getEthereumProvider()
+      const balance = await provider.request({
+        method: 'eth_getBalance',
+        params: [wallet.address, 'latest'],
+      })
+      
+      const balanceBigInt = BigInt(balance)
+      console.log('Wallet balance:', balanceBigInt.toString(), 'Required:', requiredAmount.toString())
+      return balanceBigInt >= requiredAmount
+    } catch (error) {
+      console.error('Error checking balance:', error)
+      return false
+    }
+  }
+
+  const promptFundingIfNeeded = async (wallet: WalletWithMetadata, error: any): Promise<void> => {
+    // Check if error is related to insufficient funds
+    const errorMessage = error?.message || error?.toString() || ''
+    const isInsufficientFunds = errorMessage.toLowerCase().includes('insufficient') || 
+                               errorMessage.toLowerCase().includes('funds') ||
+                               errorMessage.toLowerCase().includes('balance')
+    
+    if (isInsufficientFunds && wallet.walletClientType === 'privy') {
+      console.log('Insufficient funds detected, triggering funding flow for:', wallet.address)
+      try {
+        await fundWallet(wallet.address)
+      } catch (fundingError) {
+        console.error('Funding flow failed:', fundingError)
+      }
+    }
   }
 
   const writeContract = async (config: WriteContractArgs) => {
@@ -73,6 +108,18 @@ export function usePrivySmartContract() {
         params: [],
       })
 
+      // Calculate total required ETH (gas * gasPrice)
+      const gasCost = BigInt(estimatedGas) * BigInt(gasPrice)
+      
+      // Check if wallet has sufficient balance BEFORE attempting transaction
+      const hasSufficientFunds = await checkBalance(wallet, gasCost)
+      
+      if (!hasSufficientFunds) {
+        console.log('Insufficient funds for transaction, prompting funding...')
+        await promptFundingIfNeeded(wallet, new Error('Insufficient funds for gas'))
+        throw new Error('Insufficient funds for transaction. Please fund your wallet and try again.')
+      }
+
       // Create and send the transaction with gas parameters
       const txRequest = {
         from: wallet.address as `0x${string}`,
@@ -95,6 +142,13 @@ export function usePrivySmartContract() {
       return txHash
     } catch (error) {
       console.error('Error sending transaction with Privy:', error)
+      
+      // If transaction fails due to insufficient funds, prompt for funding
+      const wallet = await getPrivyWallet()
+      if (wallet) {
+        await promptFundingIfNeeded(wallet, error)
+      }
+      
       throw error
     } finally {
       setIsPending(false)

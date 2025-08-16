@@ -8,17 +8,37 @@ interface AuthGateProps {
 }
 
 export function AuthGate({ children }: AuthGateProps) {
-  const { ready, authenticated } = usePrivy()
+  const { ready, authenticated, user } = usePrivy()
   const { fundWallet } = useFundWallet()
   
   const { login } = useLogin({
-    onComplete: ({ user, isNewUser }) => {
+    onComplete: ({ user, isNewUser, wasAlreadyAuthenticated }) => {
+      console.log('Login completed:', { user, isNewUser, wasAlreadyAuthenticated, wallet: user.wallet })
+      console.log('Wallet client type:', user.wallet?.walletClientType)
+      
       // Automatically prompt new users to fund their embedded wallet for gas fees
       if (isNewUser && user.wallet?.walletClientType === 'privy') {
-        fundWallet(user.wallet.address)
+        console.log('Triggering funding for new Privy user:', user.wallet.address)
+        fundWallet(user.wallet.address).catch(error => {
+          console.error('Funding failed:', error)
+        })
+      } else {
+        console.log('Funding not triggered:', { isNewUser, walletClientType: user.wallet?.walletClientType })
       }
     }
   })
+  
+  // Manual test function
+  const testFunding = async () => {
+    if (user?.wallet?.address) {
+      console.log('Testing manual funding for:', user.wallet.address)
+      try {
+        await fundWallet(user.wallet.address)
+      } catch (error) {
+        console.error('Manual funding test failed:', error)
+      }
+    }
+  }
 
   if (!ready) {
     return <LoadingScreen message="Initializing Web3..." />
@@ -57,6 +77,22 @@ export function AuthGate({ children }: AuthGateProps) {
           </ScaleIn>
         </div>
       </div>
+    )
+  }
+
+  if (authenticated && user?.wallet?.walletClientType === 'privy') {
+    return (
+      <>
+        {children}
+        <div className="fixed bottom-4 right-4 z-50">
+          <button
+            onClick={testFunding}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+          >
+            Test Fund Wallet
+          </button>
+        </div>
+      </>
     )
   }
 
