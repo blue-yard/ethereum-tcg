@@ -48,23 +48,21 @@ export const privyConfig = {
       logo: undefined,
     },
     embeddedWallets: {
-      createOnLogin: 'all-users' as const, // Create embedded wallet for all users for gasless transactions
+      createOnLogin: 'all-users' as const,
       requireUserPasswordOnCreate: false,
-      noPromptOnSignature: false, // Allow signature prompts
-      showWalletUIs: true, // Show wallet UIs for embedded wallets
+      noPromptOnSignature: false,
+      showWalletUIs: true,
     },
     externalWallets: {
       metamask: true,
-      coinbaseWallet: true,
+      coinbaseWallet: { connectionOptions: 'all' as const },
       walletConnect: true,
     },
     supportedChains: [localChain, mainnet, base],
     defaultChain: localChain,
-    // Additional wallet options
     mfa: {
       noPromptOnMfaRequired: false,
     },
-    // Legal config
     legal: {
       termsAndConditionsUrl: '',
       privacyPolicyUrl: '',

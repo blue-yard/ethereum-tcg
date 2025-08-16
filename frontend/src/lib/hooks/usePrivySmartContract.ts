@@ -63,19 +63,10 @@ export function usePrivySmartContract() {
       console.log('Insufficient funds detected, triggering funding flow for:', wallet.address)
       
       try {
-        // Fund on Base (cheaper than mainnet) - user will need to bridge to local if developing
-        await fundWallet(wallet.address, {
-          chain: { id: 8453, name: 'base' }, // Fund on Base network
-          amount: 0.01 // Small amount of ETH
-        })
+        // Fund on Base (cheaper than mainnet) - use simple configuration
+        await fundWallet(wallet.address)
       } catch (fundingError) {
         console.error('Funding flow failed:', fundingError)
-        // Fallback: try default funding
-        try {
-          await fundWallet(wallet.address)
-        } catch (fallbackError) {
-          console.error('All funding attempts failed:', fallbackError)
-        }
       }
     }
   }
